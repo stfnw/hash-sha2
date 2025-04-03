@@ -1061,8 +1061,7 @@ int hash(int testno, int loopno, int hashno, const char *testarray, int length,
  * repeated repeatcount times, followed by the extrabits.  If the
  * result is known, it is in resultarray in uppercase hex.
  */
-int hashHkdf(int testno, int loopno, int hashno, int printResults,
-             int printPassFail) {
+int hashHkdf(int testno, int loopno, int, int printResults, int printPassFail) {
     int err;
     unsigned char prk[USHAMaxHashSize + 1];
     uint8_t okm[255 * USHAMaxHashSize + 1];
