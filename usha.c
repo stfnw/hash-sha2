@@ -28,7 +28,7 @@
  *      sha Error Code.
  *
  */
-int USHAReset(USHAContext *context, enum SHAversion whichSha) {
+i32 USHAReset(USHAContext *context, enum SHAversion whichSha) {
     if (!context)
         return shaNull;
     context->whichSha = whichSha;
@@ -62,8 +62,7 @@ int USHAReset(USHAContext *context, enum SHAversion whichSha) {
  *      sha Error Code.
  *
  */
-int USHAInput(USHAContext *context, const uint8_t *bytes,
-              unsigned int bytecount) {
+i32 USHAInput(USHAContext *context, const u8 *bytes, u32 bytecount) {
     if (!context)
         return shaNull;
     switch (context->whichSha) {
@@ -99,7 +98,7 @@ int USHAInput(USHAContext *context, const uint8_t *bytes,
  * Returns:
  *   sha Error Code.
  */
-int USHAFinalBits(USHAContext *context, uint8_t bits, unsigned int bit_count) {
+i32 USHAFinalBits(USHAContext *context, u8 bits, u32 bit_count) {
     if (!context)
         return shaNull;
     switch (context->whichSha) {
@@ -136,7 +135,7 @@ int USHAFinalBits(USHAContext *context, uint8_t bits, unsigned int bit_count) {
  *   sha Error Code.
  *
  */
-int USHAResult(USHAContext *context, uint8_t Message_Digest[USHAMaxHashSize]) {
+i32 USHAResult(USHAContext *context, u8 Message_Digest[USHAMaxHashSize]) {
     if (!context)
         return shaNull;
     switch (context->whichSha) {
@@ -168,7 +167,7 @@ int USHAResult(USHAContext *context, uint8_t Message_Digest[USHAMaxHashSize]) {
  *   block size
  *
  */
-int USHABlockSize(enum SHAversion whichSha) {
+i32 USHABlockSize(enum SHAversion whichSha) {
     switch (whichSha) {
     case SHA1: return SHA1_Message_Block_Size;
     case SHA224: return SHA224_Message_Block_Size;
@@ -194,7 +193,7 @@ int USHABlockSize(enum SHAversion whichSha) {
  *   hash size
  *
  */
-int USHAHashSize(enum SHAversion whichSha) {
+i32 USHAHashSize(enum SHAversion whichSha) {
     switch (whichSha) {
     case SHA1: return SHA1HashSize;
     case SHA224: return SHA224HashSize;
@@ -220,7 +219,7 @@ int USHAHashSize(enum SHAversion whichSha) {
  *   hash size in bits
  *
  */
-int USHAHashSizeBits(enum SHAversion whichSha) {
+i32 USHAHashSizeBits(enum SHAversion whichSha) {
     switch (whichSha) {
     case SHA1: return SHA1HashSizeBits;
     case SHA224: return SHA224HashSizeBits;

@@ -30,7 +30,7 @@
  *
  *  Caveats:
  *      SHA-1 is designed to work with messages less than 2^64 bits
- *      long.  This implementation uses SHA1Input() to hash the bits
+ *      u64.  This implementation uses SHA1Input() to hash the bits
  *      that are a multiple of the size of an 8-bit octet, and then
  *      optionally uses SHA1FinalBits() to hash the final few bits of
  *      the input.
@@ -48,7 +48,7 @@
  * Add "length" to the length.
  * Set Corrupted when overflow has occurred.
  */
-static uint32_t addTemp;
+static u32 addTemp;
 #define SHA1AddLength(context, length)                                         \
     (addTemp = (context)->Length_Low,                                          \
      (context)->Corrupted = (((context)->Length_Low += (length)) < addTemp) && \
@@ -58,8 +58,8 @@ static uint32_t addTemp;
 
 /* Local Function Prototypes */
 static void SHA1ProcessMessageBlock(SHA1Context *context);
-static void SHA1Finalize(SHA1Context *context, uint8_t Pad_Byte);
-static void SHA1PadMessage(SHA1Context *context, uint8_t Pad_Byte);
+static void SHA1Finalize(SHA1Context *context, u8 Pad_Byte);
+static void SHA1PadMessage(SHA1Context *context, u8 Pad_Byte);
 
 /*
  *  SHA1Reset
@@ -76,7 +76,7 @@ static void SHA1PadMessage(SHA1Context *context, uint8_t Pad_Byte);
  *      sha Error Code.
  *
  */
-int SHA1Reset(SHA1Context *context) {
+i32 SHA1Reset(SHA1Context *context) {
     if (!context)
         return shaNull;
 
@@ -116,8 +116,7 @@ int SHA1Reset(SHA1Context *context) {
  *      sha Error Code.
  *
  */
-int SHA1Input(SHA1Context *context, const uint8_t *message_array,
-              unsigned length) {
+i32 SHA1Input(SHA1Context *context, const u8 *message_array, unsigned length) {
     if (!context)
         return shaNull;
     if (!length)
@@ -161,15 +160,14 @@ int SHA1Input(SHA1Context *context, const uint8_t *message_array,
  * Returns:
  *   sha Error Code.
  */
-int SHA1FinalBits(SHA1Context *context, uint8_t message_bits,
-                  unsigned int length) {
-    static uint8_t masks[8] = {
+i32 SHA1FinalBits(SHA1Context *context, u8 message_bits, u32 length) {
+    static u8 masks[8] = {
         /* 0 0b00000000 */ 0x00, /* 1 0b10000000 */ 0x80,
         /* 2 0b11000000 */ 0xC0, /* 3 0b11100000 */ 0xE0,
         /* 4 0b11110000 */ 0xF0, /* 5 0b11111000 */ 0xF8,
         /* 6 0b11111100 */ 0xFC, /* 7 0b11111110 */ 0xFE};
 
-    static uint8_t markbit[8] = {
+    static u8 markbit[8] = {
         /* 0 0b10000000 */ 0x80, /* 1 0b01000000 */ 0x40,
         /* 2 0b00100000 */ 0x20, /* 3 0b00010000 */ 0x10,
         /* 4 0b00001000 */ 0x08, /* 5 0b00000100 */ 0x04,
@@ -188,7 +186,7 @@ int SHA1FinalBits(SHA1Context *context, uint8_t message_bits,
 
     SHA1AddLength(context, length);
     SHA1Finalize(context,
-                 (uint8_t)((message_bits & masks[length]) | markbit[length]));
+                 (u8)((message_bits & masks[length]) | markbit[length]));
 
     return context->Corrupted;
 }
@@ -213,8 +211,8 @@ int SHA1FinalBits(SHA1Context *context, uint8_t message_bits,
  *   sha Error Code.
  *
  */
-int SHA1Result(SHA1Context *context, uint8_t Message_Digest[SHA1HashSize]) {
-    int i;
+i32 SHA1Result(SHA1Context *context, u8 Message_Digest[SHA1HashSize]) {
+    i32 i;
 
     if (!context)
         return shaNull;
@@ -227,8 +225,8 @@ int SHA1Result(SHA1Context *context, uint8_t Message_Digest[SHA1HashSize]) {
         SHA1Finalize(context, 0x80);
 
     for (i = 0; i < SHA1HashSize; ++i)
-        Message_Digest[i] = (uint8_t)(context->Intermediate_Hash[i >> 2] >>
-                                      (8 * (3 - (i & 0x03))));
+        Message_Digest[i] =
+            (u8)(context->Intermediate_Hash[i >> 2] >> (8 * (3 - (i & 0x03))));
 
     return shaSuccess;
 }
@@ -254,21 +252,21 @@ int SHA1Result(SHA1Context *context, uint8_t Message_Digest[SHA1HashSize]) {
  */
 static void SHA1ProcessMessageBlock(SHA1Context *context) {
     /* Constants defined in FIPS 180-3, section 4.2.1 */
-    const uint32_t K[4] = {0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6};
+    const u32 K[4] = {0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6};
 
-    int t;                  /* Loop counter */
-    uint32_t temp;          /* Temporary word value */
-    uint32_t W[80];         /* Word sequence */
-    uint32_t A, B, C, D, E; /* Word buffers */
+    i32 t;             /* Loop counter */
+    u32 temp;          /* Temporary word value */
+    u32 W[80];         /* Word sequence */
+    u32 A, B, C, D, E; /* Word buffers */
 
     /*
      * Initialize the first 16 words in the array W
      */
     for (t = 0; t < 16; t++) {
-        W[t] = ((uint32_t)context->Message_Block[t * 4]) << 24;
-        W[t] |= ((uint32_t)context->Message_Block[t * 4 + 1]) << 16;
-        W[t] |= ((uint32_t)context->Message_Block[t * 4 + 2]) << 8;
-        W[t] |= ((uint32_t)context->Message_Block[t * 4 + 3]);
+        W[t] = ((u32)context->Message_Block[t * 4]) << 24;
+        W[t] |= ((u32)context->Message_Block[t * 4 + 1]) << 16;
+        W[t] |= ((u32)context->Message_Block[t * 4 + 2]) << 8;
+        W[t] |= ((u32)context->Message_Block[t * 4 + 3]);
     }
 
     for (t = 16; t < 80; t++)
@@ -337,14 +335,14 @@ static void SHA1ProcessMessageBlock(SHA1Context *context) {
  *     The last byte to add to the message block before the 0-padding
  *     and length.  This will contain the last bits of the message
  *     followed by another single bit.  If the message was an
- *     exact multiple of 8-bits long, Pad_Byte will be 0x80.
+ *     exact multiple of 8-bits u64, Pad_Byte will be 0x80.
  *
  * Returns:
  *   sha Error Code.
  *
  */
-static void SHA1Finalize(SHA1Context *context, uint8_t Pad_Byte) {
-    int i;
+static void SHA1Finalize(SHA1Context *context, u8 Pad_Byte) {
+    i32 i;
     SHA1PadMessage(context, Pad_Byte);
     /* message may be sensitive, clear it out */
     for (i = 0; i < SHA1_Message_Block_Size; ++i)
@@ -373,12 +371,12 @@ static void SHA1Finalize(SHA1Context *context, uint8_t Pad_Byte) {
  *     The last byte to add to the message block before the 0-padding
  *     and length.  This will contain the last bits of the message
  *     followed by another single bit.  If the message was an
- *     exact multiple of 8-bits long, Pad_Byte will be 0x80.
+ *     exact multiple of 8-bits u64, Pad_Byte will be 0x80.
  *
  * Returns:
  *   Nothing.
  */
-static void SHA1PadMessage(SHA1Context *context, uint8_t Pad_Byte) {
+static void SHA1PadMessage(SHA1Context *context, u8 Pad_Byte) {
     /*
      * Check to see if the current message block is too small to hold
      * the initial padding bits and length.  If so, we will pad the
@@ -400,14 +398,14 @@ static void SHA1PadMessage(SHA1Context *context, uint8_t Pad_Byte) {
     /*
      * Store the message length as the last 8 octets
      */
-    context->Message_Block[56] = (uint8_t)(context->Length_High >> 24);
-    context->Message_Block[57] = (uint8_t)(context->Length_High >> 16);
-    context->Message_Block[58] = (uint8_t)(context->Length_High >> 8);
-    context->Message_Block[59] = (uint8_t)(context->Length_High);
-    context->Message_Block[60] = (uint8_t)(context->Length_Low >> 24);
-    context->Message_Block[61] = (uint8_t)(context->Length_Low >> 16);
-    context->Message_Block[62] = (uint8_t)(context->Length_Low >> 8);
-    context->Message_Block[63] = (uint8_t)(context->Length_Low);
+    context->Message_Block[56] = (u8)(context->Length_High >> 24);
+    context->Message_Block[57] = (u8)(context->Length_High >> 16);
+    context->Message_Block[58] = (u8)(context->Length_High >> 8);
+    context->Message_Block[59] = (u8)(context->Length_High);
+    context->Message_Block[60] = (u8)(context->Length_Low >> 24);
+    context->Message_Block[61] = (u8)(context->Length_Low >> 16);
+    context->Message_Block[62] = (u8)(context->Length_Low >> 8);
+    context->Message_Block[63] = (u8)(context->Length_Low);
 
     SHA1ProcessMessageBlock(context);
 }

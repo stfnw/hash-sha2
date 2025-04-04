@@ -34,7 +34,7 @@
  *
  * Caveats:
  *   SHA-224 and SHA-256 are designed to work with messages less
- *   than 2^64 bits long.  This implementation uses SHA224/256Input()
+ *   than 2^64 bits u64.  This implementation uses SHA224/256Input()
  *   to hash the bits that are a multiple of the size of an 8-bit
  *   octet, and then optionally uses SHA224/256FinalBits()
  *   to hash the final few bits of the input.
@@ -62,7 +62,7 @@
  * Add "length" to the length.
  * Set Corrupted when overflow has occurred.
  */
-static uint32_t addTemp;
+static u32 addTemp;
 #define SHA224_256AddLength(context, length)                                   \
     (addTemp = (context)->Length_Low,                                          \
      (context)->Corrupted = (((context)->Length_Low += (length)) < addTemp) && \
@@ -71,22 +71,22 @@ static uint32_t addTemp;
                                 : (context)->Corrupted)
 
 /* Local Function Prototypes */
-static int SHA224_256Reset(SHA256Context *context, uint32_t *H0);
+static i32 SHA224_256Reset(SHA256Context *context, u32 *H0);
 static void SHA224_256ProcessMessageBlock(SHA256Context *context);
-static void SHA224_256Finalize(SHA256Context *context, uint8_t Pad_Byte);
-static void SHA224_256PadMessage(SHA256Context *context, uint8_t Pad_Byte);
-static int SHA224_256ResultN(SHA256Context *context, uint8_t Message_Digest[],
-                             int HashSize);
+static void SHA224_256Finalize(SHA256Context *context, u8 Pad_Byte);
+static void SHA224_256PadMessage(SHA256Context *context, u8 Pad_Byte);
+static i32 SHA224_256ResultN(SHA256Context *context, u8 Message_Digest[],
+                             i32 HashSize);
 
 /* Initial Hash Values: FIPS 180-3 section 5.3.2 */
-static uint32_t SHA224_H0[SHA256HashSize / 4] = {
-    0xC1059ED8, 0x367CD507, 0x3070DD17, 0xF70E5939,
-    0xFFC00B31, 0x68581511, 0x64F98FA7, 0xBEFA4FA4};
+static u32 SHA224_H0[SHA256HashSize / 4] = {0xC1059ED8, 0x367CD507, 0x3070DD17,
+                                            0xF70E5939, 0xFFC00B31, 0x68581511,
+                                            0x64F98FA7, 0xBEFA4FA4};
 
 /* Initial Hash Values: FIPS 180-3 section 5.3.3 */
-static uint32_t SHA256_H0[SHA256HashSize / 4] = {
-    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-    0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19};
+static u32 SHA256_H0[SHA256HashSize / 4] = {0x6A09E667, 0xBB67AE85, 0x3C6EF372,
+                                            0xA54FF53A, 0x510E527F, 0x9B05688C,
+                                            0x1F83D9AB, 0x5BE0CD19};
 
 /*
  * SHA224Reset
@@ -102,7 +102,7 @@ static uint32_t SHA256_H0[SHA256HashSize / 4] = {
  * Returns:
  *   sha Error Code.
  */
-int SHA224Reset(SHA224Context *context) {
+i32 SHA224Reset(SHA224Context *context) {
     return SHA224_256Reset(context, SHA224_H0);
 }
 
@@ -126,8 +126,7 @@ int SHA224Reset(SHA224Context *context) {
  *   sha Error Code.
  *
  */
-int SHA224Input(SHA224Context *context, const uint8_t *message_array,
-                unsigned int length) {
+i32 SHA224Input(SHA224Context *context, const u8 *message_array, u32 length) {
     return SHA256Input(context, message_array, length);
 }
 
@@ -150,8 +149,7 @@ int SHA224Input(SHA224Context *context, const uint8_t *message_array,
  * Returns:
  *   sha Error Code.
  */
-int SHA224FinalBits(SHA224Context *context, uint8_t message_bits,
-                    unsigned int length) {
+i32 SHA224FinalBits(SHA224Context *context, u8 message_bits, u32 length) {
     return SHA256FinalBits(context, message_bits, length);
 }
 
@@ -174,8 +172,7 @@ int SHA224FinalBits(SHA224Context *context, uint8_t message_bits,
  * Returns:
  *   sha Error Code.
  */
-int SHA224Result(SHA224Context *context,
-                 uint8_t Message_Digest[SHA224HashSize]) {
+i32 SHA224Result(SHA224Context *context, u8 Message_Digest[SHA224HashSize]) {
     return SHA224_256ResultN(context, Message_Digest, SHA224HashSize);
 }
 
@@ -193,7 +190,7 @@ int SHA224Result(SHA224Context *context,
  * Returns:
  *   sha Error Code.
  */
-int SHA256Reset(SHA256Context *context) {
+i32 SHA256Reset(SHA256Context *context) {
     return SHA224_256Reset(context, SHA256_H0);
 }
 
@@ -216,8 +213,7 @@ int SHA256Reset(SHA256Context *context) {
  * Returns:
  *   sha Error Code.
  */
-int SHA256Input(SHA256Context *context, const uint8_t *message_array,
-                unsigned int length) {
+i32 SHA256Input(SHA256Context *context, const u8 *message_array, u32 length) {
     if (!context)
         return shaNull;
     if (!length)
@@ -261,14 +257,13 @@ int SHA256Input(SHA256Context *context, const uint8_t *message_array,
  * Returns:
  *   sha Error Code.
  */
-int SHA256FinalBits(SHA256Context *context, uint8_t message_bits,
-                    unsigned int length) {
-    static uint8_t masks[8] = {
+i32 SHA256FinalBits(SHA256Context *context, u8 message_bits, u32 length) {
+    static u8 masks[8] = {
         /* 0 0b00000000 */ 0x00, /* 1 0b10000000 */ 0x80,
         /* 2 0b11000000 */ 0xC0, /* 3 0b11100000 */ 0xE0,
         /* 4 0b11110000 */ 0xF0, /* 5 0b11111000 */ 0xF8,
         /* 6 0b11111100 */ 0xFC, /* 7 0b11111110 */ 0xFE};
-    static uint8_t markbit[8] = {
+    static u8 markbit[8] = {
         /* 0 0b10000000 */ 0x80, /* 1 0b01000000 */ 0x40,
         /* 2 0b00100000 */ 0x20, /* 3 0b00010000 */ 0x10,
         /* 4 0b00001000 */ 0x08, /* 5 0b00000100 */ 0x04,
@@ -286,8 +281,8 @@ int SHA256FinalBits(SHA256Context *context, uint8_t message_bits,
         return context->Corrupted = shaBadParam;
 
     SHA224_256AddLength(context, length);
-    SHA224_256Finalize(
-        context, (uint8_t)((message_bits & masks[length]) | markbit[length]));
+    SHA224_256Finalize(context,
+                       (u8)((message_bits & masks[length]) | markbit[length]));
 
     return context->Corrupted;
 }
@@ -311,8 +306,7 @@ int SHA256FinalBits(SHA256Context *context, uint8_t message_bits,
  * Returns:
  *   sha Error Code.
  */
-int SHA256Result(SHA256Context *context,
-                 uint8_t Message_Digest[SHA256HashSize]) {
+i32 SHA256Result(SHA256Context *context, u8 Message_Digest[SHA256HashSize]) {
     return SHA224_256ResultN(context, Message_Digest, SHA256HashSize);
 }
 
@@ -332,7 +326,7 @@ int SHA256Result(SHA256Context *context,
  * Returns:
  *   sha Error Code.
  */
-static int SHA224_256Reset(SHA256Context *context, uint32_t *H0) {
+static i32 SHA224_256Reset(SHA256Context *context, u32 *H0) {
     if (!context)
         return shaNull;
 
@@ -375,7 +369,7 @@ static int SHA224_256Reset(SHA256Context *context, uint32_t *H0) {
  */
 static void SHA224_256ProcessMessageBlock(SHA256Context *context) {
     /* Constants defined in FIPS 180-3, section 4.2.2 */
-    static const uint32_t K[64] = {
+    static const u32 K[64] = {
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
         0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
         0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
@@ -387,19 +381,19 @@ static void SHA224_256ProcessMessageBlock(SHA256Context *context) {
         0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
         0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
         0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
-    int t, t4;                       /* Loop counter */
-    uint32_t temp1, temp2;           /* Temporary word value */
-    uint32_t W[64];                  /* Word sequence */
-    uint32_t A, B, C, D, E, F, G, H; /* Word buffers */
+    i32 t, t4;                  /* Loop counter */
+    u32 temp1, temp2;           /* Temporary word value */
+    u32 W[64];                  /* Word sequence */
+    u32 A, B, C, D, E, F, G, H; /* Word buffers */
 
     /*
      * Initialize the first 16 words in the array W
      */
     for (t = t4 = 0; t < 16; t++, t4 += 4)
-        W[t] = (((uint32_t)context->Message_Block[t4]) << 24) |
-               (((uint32_t)context->Message_Block[t4 + 1]) << 16) |
-               (((uint32_t)context->Message_Block[t4 + 2]) << 8) |
-               (((uint32_t)context->Message_Block[t4 + 3]));
+        W[t] = (((u32)context->Message_Block[t4]) << 24) |
+               (((u32)context->Message_Block[t4 + 1]) << 16) |
+               (((u32)context->Message_Block[t4 + 2]) << 8) |
+               (((u32)context->Message_Block[t4 + 3]));
 
     for (t = 16; t < 64; t++)
         W[t] = SHA256_sigma1(W[t - 2]) + W[t - 7] + SHA256_sigma0(W[t - 15]) +
@@ -452,13 +446,13 @@ static void SHA224_256ProcessMessageBlock(SHA256Context *context) {
  *     The last byte to add to the message block before the 0-padding
  *     and length.  This will contain the last bits of the message
  *     followed by another single bit.  If the message was an
- *     exact multiple of 8-bits long, Pad_Byte will be 0x80.
+ *     exact multiple of 8-bits u64, Pad_Byte will be 0x80.
  *
  * Returns:
  *   sha Error Code.
  */
-static void SHA224_256Finalize(SHA256Context *context, uint8_t Pad_Byte) {
-    int i;
+static void SHA224_256Finalize(SHA256Context *context, u8 Pad_Byte) {
+    i32 i;
     SHA224_256PadMessage(context, Pad_Byte);
     /* message may be sensitive, so clear it out */
     for (i = 0; i < SHA256_Message_Block_Size; ++i)
@@ -487,12 +481,12 @@ static void SHA224_256Finalize(SHA256Context *context, uint8_t Pad_Byte) {
  *     The last byte to add to the message block before the 0-padding
  *     and length.  This will contain the last bits of the message
  *     followed by another single bit.  If the message was an
- *     exact multiple of 8-bits long, Pad_Byte will be 0x80.
+ *     exact multiple of 8-bits u64, Pad_Byte will be 0x80.
  *
  * Returns:
  *   Nothing.
  */
-static void SHA224_256PadMessage(SHA256Context *context, uint8_t Pad_Byte) {
+static void SHA224_256PadMessage(SHA256Context *context, u8 Pad_Byte) {
     /*
      * Check to see if the current message block is too small to hold
      * the initial padding bits and length.  If so, we will pad the
@@ -513,14 +507,14 @@ static void SHA224_256PadMessage(SHA256Context *context, uint8_t Pad_Byte) {
     /*
      * Store the message length as the last 8 octets
      */
-    context->Message_Block[56] = (uint8_t)(context->Length_High >> 24);
-    context->Message_Block[57] = (uint8_t)(context->Length_High >> 16);
-    context->Message_Block[58] = (uint8_t)(context->Length_High >> 8);
-    context->Message_Block[59] = (uint8_t)(context->Length_High);
-    context->Message_Block[60] = (uint8_t)(context->Length_Low >> 24);
-    context->Message_Block[61] = (uint8_t)(context->Length_Low >> 16);
-    context->Message_Block[62] = (uint8_t)(context->Length_Low >> 8);
-    context->Message_Block[63] = (uint8_t)(context->Length_Low);
+    context->Message_Block[56] = (u8)(context->Length_High >> 24);
+    context->Message_Block[57] = (u8)(context->Length_High >> 16);
+    context->Message_Block[58] = (u8)(context->Length_High >> 8);
+    context->Message_Block[59] = (u8)(context->Length_High);
+    context->Message_Block[60] = (u8)(context->Length_Low >> 24);
+    context->Message_Block[61] = (u8)(context->Length_Low >> 16);
+    context->Message_Block[62] = (u8)(context->Length_Low >> 8);
+    context->Message_Block[63] = (u8)(context->Length_Low);
 
     SHA224_256ProcessMessageBlock(context);
 }
@@ -546,9 +540,9 @@ static void SHA224_256PadMessage(SHA256Context *context, uint8_t Pad_Byte) {
  * Returns:
  *   sha Error Code.
  */
-static int SHA224_256ResultN(SHA256Context *context, uint8_t Message_Digest[],
-                             int HashSize) {
-    int i;
+static i32 SHA224_256ResultN(SHA256Context *context, u8 Message_Digest[],
+                             i32 HashSize) {
+    i32 i;
 
     if (!context)
         return shaNull;
@@ -561,8 +555,8 @@ static int SHA224_256ResultN(SHA256Context *context, uint8_t Message_Digest[],
         SHA224_256Finalize(context, 0x80);
 
     for (i = 0; i < HashSize; ++i)
-        Message_Digest[i] = (uint8_t)(context->Intermediate_Hash[i >> 2] >>
-                                      8 * (3 - (i & 0x03)));
+        Message_Digest[i] =
+            (u8)(context->Intermediate_Hash[i >> 2] >> 8 * (3 - (i & 0x03)));
 
     return shaSuccess;
 }

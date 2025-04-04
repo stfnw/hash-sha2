@@ -42,9 +42,8 @@
  *
  */
 
-int hmac(SHAversion whichSha, const unsigned char *message_array, int length,
-         const unsigned char *key, int key_len,
-         uint8_t digest[USHAMaxHashSize]) {
+i32 hmac(SHAversion whichSha, const u8 *message_array, i32 length,
+         const u8 *key, i32 key_len, u8 digest[USHAMaxHashSize]) {
     HMACContext context;
     return hmacReset(&context, whichSha, key, key_len) ||
            hmacInput(&context, message_array, length) ||
@@ -72,15 +71,15 @@ int hmac(SHAversion whichSha, const unsigned char *message_array, int length,
  *      sha Error Code.
  *
  */
-int hmacReset(HMACContext *context, enum SHAversion whichSha,
-              const unsigned char *key, int key_len) {
-    int i, blocksize, hashsize, ret;
+i32 hmacReset(HMACContext *context, enum SHAversion whichSha, const u8 *key,
+              i32 key_len) {
+    i32 i, blocksize, hashsize, ret;
 
     /* inner padding - key XORd with ipad */
-    unsigned char k_ipad[USHA_Max_Message_Block_Size];
+    u8 k_ipad[USHA_Max_Message_Block_Size];
 
     /* temporary buffer when keylen > blocksize */
-    unsigned char tempkey[USHAMaxHashSize];
+    u8 tempkey[USHAMaxHashSize];
 
     if (!context)
         return shaNull;
@@ -97,7 +96,7 @@ int hmacReset(HMACContext *context, enum SHAversion whichSha,
      */
     if (key_len > blocksize) {
         USHAContext tcontext;
-        int err = USHAReset(&tcontext, whichSha) ||
+        i32 err = USHAReset(&tcontext, whichSha) ||
                   USHAInput(&tcontext, key, key_len) ||
                   USHAResult(&tcontext, tempkey);
         if (err != shaSuccess)
@@ -157,7 +156,7 @@ int hmacReset(HMACContext *context, enum SHAversion whichSha,
  *      sha Error Code.
  *
  */
-int hmacInput(HMACContext *context, const unsigned char *text, int text_len) {
+i32 hmacInput(HMACContext *context, const u8 *text, i32 text_len) {
     if (!context)
         return shaNull;
     if (context->Corrupted)
@@ -187,7 +186,7 @@ int hmacInput(HMACContext *context, const unsigned char *text, int text_len) {
  * Returns:
  *   sha Error Code.
  */
-int hmacFinalBits(HMACContext *context, uint8_t bits, unsigned int bit_count) {
+i32 hmacFinalBits(HMACContext *context, u8 bits, u32 bit_count) {
     if (!context)
         return shaNull;
     if (context->Corrupted)
@@ -218,8 +217,8 @@ int hmacFinalBits(HMACContext *context, uint8_t bits, unsigned int bit_count) {
  *   sha Error Code.
  *
  */
-int hmacResult(HMACContext *context, uint8_t digest[USHAMaxHashSize]) {
-    int ret;
+i32 hmacResult(HMACContext *context, u8 digest[USHAMaxHashSize]) {
+    i32 ret;
     if (!context)
         return shaNull;
     if (context->Corrupted)

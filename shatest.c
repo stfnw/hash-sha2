@@ -46,7 +46,7 @@
 #include <string.h>
 #include <unistd.h> /* defines getopt() and optarg */
 
-static int scasecmp(const char *s1, const char *s2);
+static i32 scasecmp(const u8 *s1, const u8 *s2);
 
 /*
  *  Define patterns for testing
@@ -224,19 +224,19 @@ static int scasecmp(const char *s1, const char *s2);
 
 /* Test arrays for hashes. */
 struct hash {
-    const char *name;
+    const u8 *name;
     SHAversion whichSha;
-    int hashsize;
+    i32 hashsize;
     struct {
-        const char *testarray;
-        int length;
-        long repeatcount;
-        int extrabits;
-        int numberExtrabits;
-        const char *resultarray;
+        const u8 *testarray;
+        i32 length;
+        u64 repeatcount;
+        i32 extrabits;
+        i32 numberExtrabits;
+        const u8 *resultarray;
     } tests[TESTCOUNT];
-    const char *randomtest;
-    const char *randomresults[RANDOMCOUNT];
+    const u8 *randomtest;
+    const u8 *randomresults[RANDOMCOUNT];
 } hashes[HASHCOUNT] = {
     {"SHA1",
      SHA1,
@@ -486,12 +486,12 @@ struct hash {
 
 /* Test arrays for HMAC. */
 struct hmachash {
-    const char *keyarray[5];
-    int keylength[5];
-    const char *dataarray[5];
-    int datalength[5];
-    const char *resultarray[5];
-    int resultlength[5];
+    const u8 *keyarray[5];
+    i32 keylength[5];
+    const u8 *dataarray[5];
+    i32 datalength[5];
+    const u8 *resultarray[5];
+    i32 resultlength[5];
 } hmachashes[HMACTESTCOUNT] = {
     {/* 1 */ {"\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b"
               "\x0b\x0b\x0b\x0b\x0b"},
@@ -684,16 +684,16 @@ struct hmachash {
 /* Test arrays for HKDF. */
 struct hkdfhash {
     SHAversion whichSha;
-    int ikmlength;
-    const char *ikmarray;
-    int saltlength;
-    const char *saltarray;
-    int infolength;
-    const char *infoarray;
-    int prklength;
-    const char *prkarray;
-    int okmlength;
-    const char *okmarray;
+    i32 ikmlength;
+    const u8 *ikmarray;
+    i32 saltlength;
+    const u8 *saltarray;
+    i32 infolength;
+    const u8 *infoarray;
+    i32 prklength;
+    const u8 *prkarray;
+    i32 okmlength;
+    const u8 *okmarray;
 } hkdfhashes[HKDFTESTCOUNT] = {
     {/* RFC 5869 A.1. Test Case 1 */
      SHA256, 22,
@@ -806,10 +806,9 @@ struct hkdfhash {
 /*
  * Check the hash value against the expected string, expressed in hex
  */
-static const char hexdigits[] = "0123456789ABCDEF";
-int checkmatch(const unsigned char *hashvalue, const char *hexstr,
-               int hashsize) {
-    int i;
+static const u8 hexdigits[] = "0123456789ABCDEF";
+i32 checkmatch(const u8 *hashvalue, const u8 *hexstr, i32 hashsize) {
+    i32 i;
     for (i = 0; i < hashsize; ++i) {
         if (*hexstr++ != hexdigits[(hashvalue[i] >> 4) & 0xF])
             return 0;
@@ -822,16 +821,16 @@ int checkmatch(const unsigned char *hashvalue, const char *hexstr,
 /*
  * Print the string, converting non-printable characters to "."
  */
-void printstr(const char *str, int len) {
+void printstr(const u8 *str, i32 len) {
     for (; len-- > 0; str++)
-        putchar(isprint((unsigned char)*str) ? *str : '.');
+        putchar(isprint((u8)*str) ? *str : '.');
 }
 
 /*
  * Print the string, converting all characters to hex "## ".
  */
-void printxstr(const char *str, int len) {
-    char *sep = "";
+void printxstr(const u8 *str, i32 len) {
+    u8 *sep = "";
     for (; len-- > 0; str++) {
         printf("%s%c%c", sep, hexdigits[(*str >> 4) & 0xF],
                hexdigits[*str & 0xF]);
@@ -842,7 +841,7 @@ void printxstr(const char *str, int len) {
 /*
  * Print a usage message.
  */
-void usage(const char *argv0) {
+void usage(const u8 *argv0) {
     fprintf(stderr,
             "Usage:\n"
             "Common options: [-h hash] [-w|-x|-6] [-H]\n"
@@ -891,10 +890,10 @@ void usage(const char *argv0) {
 /*
  * Print the results and PASS/FAIL.
  */
-void printResult(uint8_t *Message_Digest, int hashsize, const char *hashname,
-                 const char *testtype, const char *testname,
-                 const char *resultarray, int printResults, int printPassFail) {
-    int i, k;
+void printResult(u8 *Message_Digest, i32 hashsize, const u8 *hashname,
+                 const u8 *testtype, const u8 *testname, const u8 *resultarray,
+                 i32 printResults, i32 printPassFail) {
+    i32 i, k;
     if (printResults == PRINTTEXT) {
         printf("\nhashsize=%d\n", hashsize);
         putchar('\t');
@@ -913,9 +912,9 @@ void printResult(uint8_t *Message_Digest, int hashsize, const char *hashname,
         }
         putchar('\n');
     } else if (printResults == PRINTBASE64) {
-        unsigned char b;
-        char *sm = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-                   "0123456789+/";
+        u8 b;
+        u8 *sm = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+                 "0123456789+/";
         for (i = 0; i < hashsize; i += 3) {
             putchar(sm[Message_Digest[i] >> 2]);
             b = (Message_Digest[i] & 0x03) << 4;
@@ -948,7 +947,7 @@ void printResult(uint8_t *Message_Digest, int hashsize, const char *hashname,
     }
 
     if (printPassFail && resultarray) {
-        int ret = checkmatch(Message_Digest, resultarray, hashsize);
+        i32 ret = checkmatch(Message_Digest, resultarray, hashsize);
         if ((printPassFail == PRINTPASSFAIL) || !ret)
             printf("%s %s %s: %s\n", hashname, testtype, testname,
                    ret ? "PASSED" : "FAILED");
@@ -960,18 +959,18 @@ void printResult(uint8_t *Message_Digest, int hashsize, const char *hashname,
  * repeated repeatcount times, followed by the extrabits.  If the
  * result is known, it is in resultarray in uppercase hex.
  */
-int hash(int testno, int loopno, int hashno, const char *testarray, int length,
-         long repeatcount, int numberExtrabits, int extrabits,
-         const unsigned char *keyarray, int keylen, const unsigned char *info,
-         int infolen, int okmlen, const char *resultarray, int hashsize,
-         int printResults, int printPassFail) {
+i32 hash(i32 testno, i32 loopno, i32 hashno, const u8 *testarray, i32 length,
+         u64 repeatcount, i32 numberExtrabits, i32 extrabits,
+         const u8 *keyarray, i32 keylen, const u8 *info, i32 infolen,
+         i32 okmlen, const u8 *resultarray, i32 hashsize, i32 printResults,
+         i32 printPassFail) {
     USHAContext sha;
     HMACContext hmac;
     HKDFContext hkdf;
-    int err, i;
-    uint8_t Message_Digest_Buf[USHAMaxHashSize];
-    uint8_t *Message_Digest = Message_Digest_Buf;
-    char buf[20];
+    i32 err, i;
+    u8 Message_Digest_Buf[USHAMaxHashSize];
+    u8 *Message_Digest = Message_Digest_Buf;
+    u8 buf[20];
 
     if (printResults == PRINTTEXT) {
         printf("\nTest %d: Iteration %d, Repeat %ld\n\t'", testno + 1, loopno,
@@ -1004,9 +1003,9 @@ int hash(int testno, int loopno, int hashno, const char *testarray, int length,
     }
 
     for (i = 0; i < repeatcount; ++i) {
-        err = info       ? hkdfInput(&hkdf, (const uint8_t *)testarray, length)
-              : keyarray ? hmacInput(&hmac, (const uint8_t *)testarray, length)
-                         : USHAInput(&sha, (const uint8_t *)testarray, length);
+        err = info       ? hkdfInput(&hkdf, (const u8 *)testarray, length)
+              : keyarray ? hmacInput(&hmac, (const u8 *)testarray, length)
+                         : USHAInput(&sha, (const u8 *)testarray, length);
         if (err != shaSuccess) {
             fprintf(stderr, "hash(): %sInput Error %d.\n",
                     info       ? "hkdf"
@@ -1018,10 +1017,9 @@ int hash(int testno, int loopno, int hashno, const char *testarray, int length,
     }
 
     if (numberExtrabits > 0) {
-        err = info ? hkdfFinalBits(&hkdf, extrabits, numberExtrabits)
-              : keyarray
-                  ? hmacFinalBits(&hmac, (uint8_t)extrabits, numberExtrabits)
-                  : USHAFinalBits(&sha, (uint8_t)extrabits, numberExtrabits);
+        err = info       ? hkdfFinalBits(&hkdf, extrabits, numberExtrabits)
+              : keyarray ? hmacFinalBits(&hmac, (u8)extrabits, numberExtrabits)
+                         : USHAFinalBits(&sha, (u8)extrabits, numberExtrabits);
         if (err != shaSuccess) {
             fprintf(stderr, "hash(): %sFinalBits Error %d.\n",
                     info       ? "hkdf"
@@ -1061,11 +1059,11 @@ int hash(int testno, int loopno, int hashno, const char *testarray, int length,
  * repeated repeatcount times, followed by the extrabits.  If the
  * result is known, it is in resultarray in uppercase hex.
  */
-int hashHkdf(int testno, int loopno, int, int printResults, int printPassFail) {
-    int err;
-    unsigned char prk[USHAMaxHashSize + 1];
-    uint8_t okm[255 * USHAMaxHashSize + 1];
-    char buf[20];
+i32 hashHkdf(i32 testno, i32 loopno, i32, i32 printResults, i32 printPassFail) {
+    i32 err;
+    u8 prk[USHAMaxHashSize + 1];
+    u8 okm[255 * USHAMaxHashSize + 1];
+    u8 buf[20];
 
     if (printResults == PRINTTEXT) {
         printf("\nTest %d: Iteration %d\n\tSALT\t'", testno + 1, loopno);
@@ -1079,14 +1077,11 @@ int hashHkdf(int testno, int loopno, int, int printResults, int printPassFail) {
     }
 
     /* Run hkdf() against the test vectors */
-    err =
-        hkdf(hkdfhashes[testno].whichSha,
-             (const uint8_t *)hkdfhashes[testno].saltarray,
-             hkdfhashes[testno].saltlength,
-             (const uint8_t *)hkdfhashes[testno].ikmarray,
-             hkdfhashes[testno].ikmlength,
-             (const uint8_t *)hkdfhashes[testno].infoarray,
-             hkdfhashes[testno].infolength, okm, hkdfhashes[testno].okmlength);
+    err = hkdf(
+        hkdfhashes[testno].whichSha, (const u8 *)hkdfhashes[testno].saltarray,
+        hkdfhashes[testno].saltlength, (const u8 *)hkdfhashes[testno].ikmarray,
+        hkdfhashes[testno].ikmlength, (const u8 *)hkdfhashes[testno].infoarray,
+        hkdfhashes[testno].infolength, okm, hkdfhashes[testno].okmlength);
     if (err != shaSuccess) {
         fprintf(stderr, "hashHkdf(): hkdf Error %d.\n", err);
         return err;
@@ -1098,11 +1093,10 @@ int hashHkdf(int testno, int loopno, int, int printResults, int printPassFail) {
 
     /* Now run hkdfExtract() by itself against the test vectors */
     /* to verify the intermediate results. */
-    err = hkdfExtract(hkdfhashes[testno].whichSha,
-                      (const uint8_t *)hkdfhashes[testno].saltarray,
-                      hkdfhashes[testno].saltlength,
-                      (const uint8_t *)hkdfhashes[testno].ikmarray,
-                      hkdfhashes[testno].ikmlength, prk);
+    err = hkdfExtract(
+        hkdfhashes[testno].whichSha, (const u8 *)hkdfhashes[testno].saltarray,
+        hkdfhashes[testno].saltlength, (const u8 *)hkdfhashes[testno].ikmarray,
+        hkdfhashes[testno].ikmlength, prk);
     if (err != shaSuccess) {
         fprintf(stderr, "hashHkdf(): hkdfExtract Error %d.\n", err);
         return err;
@@ -1116,7 +1110,7 @@ int hashHkdf(int testno, int loopno, int, int printResults, int printPassFail) {
     /* using the intermediate results from hkdfExtract. */
     err = hkdfExpand(hkdfhashes[testno].whichSha, prk,
                      USHAHashSize(hkdfhashes[testno].whichSha),
-                     (const uint8_t *)hkdfhashes[testno].infoarray,
+                     (const u8 *)hkdfhashes[testno].infoarray,
                      hkdfhashes[testno].infolength, okm,
                      hkdfhashes[testno].okmlength);
     if (err != shaSuccess) {
@@ -1135,19 +1129,18 @@ int hashHkdf(int testno, int loopno, int, int printResults, int printPassFail) {
  * Exercise a hash series of functions.  The input is a filename.
  * If the result is known, it is in resultarray in uppercase hex.
  */
-int hashfile(int hashno, const char *hashfilename, int bits, int bitcount,
-             int skipSpaces, const unsigned char *keyarray, int keylen,
-             const unsigned char *info, int infolen, int okmlen,
-             const char *resultarray, int hashsize, int printResults,
-             int printPassFail) {
+i32 hashfile(i32 hashno, const u8 *hashfilename, i32 bits, i32 bitcount,
+             i32 skipSpaces, const u8 *keyarray, i32 keylen, const u8 *info,
+             i32 infolen, i32 okmlen, const u8 *resultarray, i32 hashsize,
+             i32 printResults, i32 printPassFail) {
     USHAContext sha;
     HMACContext hmac;
     HKDFContext hkdf;
-    int err, nread, c;
-    unsigned char buf[4096];
-    uint8_t Message_Digest_Buf[USHAMaxHashSize];
-    uint8_t *Message_Digest = Message_Digest_Buf;
-    unsigned char cc;
+    i32 err, nread, c;
+    u8 buf[4096];
+    u8 Message_Digest_Buf[USHAMaxHashSize];
+    u8 *Message_Digest = Message_Digest_Buf;
+    u8 cc;
     FILE *hashfp =
         (strcmp(hashfilename, "-") == 0) ? stdin : fopen(hashfilename, "r");
 
@@ -1177,7 +1170,7 @@ int hashfile(int hashno, const char *hashfilename, int bits, int bitcount,
     if (skipSpaces)
         while ((c = getc(hashfp)) != EOF) {
             if (!isspace(c)) {
-                cc = (unsigned char)c;
+                cc = (u8)c;
                 err = info       ? hkdfInput(&hkdf, &cc, 1)
                       : keyarray ? hmacInput(&hmac, &cc, 1)
                                  : USHAInput(&sha, &cc, 1);
@@ -1256,14 +1249,14 @@ int hashfile(int hashno, const char *hashfilename, int bits, int bitcount,
  * This result is then checked, and used to seed the next cycle.
  * If the result is known, it is in resultarrays in uppercase hex.
  */
-void randomtest(int hashno, const char *seed, int hashsize,
-                const char **resultarrays, int randomcount, int printResults,
-                int printPassFail) {
-    int i, j;
-    char buf[20];
-    unsigned char SEED[USHAMaxHashSize], MD[1003][USHAMaxHashSize];
+void randomtest(i32 hashno, const u8 *seed, i32 hashsize,
+                const u8 **resultarrays, i32 randomcount, i32 printResults,
+                i32 printPassFail) {
+    i32 i, j;
+    u8 buf[20];
+    u8 SEED[USHAMaxHashSize], MD[1003][USHAMaxHashSize];
 
-    /* INPUT: Seed - A random seed n bits long */
+    /* INPUT: Seed - A random seed n bits u64 */
     memcpy(SEED, seed, hashsize);
     if (printResults == PRINTTEXT) {
         printf("%s random test seed= '", hashes[hashno].name);
@@ -1302,13 +1295,13 @@ void randomtest(int hashno, const char *seed, int hashsize,
 /*
  * Look up a hash name.
  */
-int findhash(const char *argv0, const char *opt) {
-    int i;
-    const char *names[HASHCOUNT][2] = {{"0", "sha1"},
-                                       {"1", "sha224"},
-                                       {"2", "sha256"},
-                                       {"3", "sha384"},
-                                       {"4", "sha512"}};
+i32 findhash(const u8 *argv0, const u8 *opt) {
+    i32 i;
+    const u8 *names[HASHCOUNT][2] = {{"0", "sha1"},
+                                     {"1", "sha224"},
+                                     {"2", "sha256"},
+                                     {"3", "sha384"},
+                                     {"4", "sha512"}};
     for (i = 0; i < HASHCOUNT; i++)
         if ((strcmp(opt, names[i][0]) == 0) ||
             (scasecmp(opt, names[i][1]) == 0))
@@ -1322,17 +1315,17 @@ int findhash(const char *argv0, const char *opt) {
 /*
  * Run some tests that should invoke errors.
  */
-void testErrors(int hashnolow, int hashnohigh, int printResults,
-                int printPassFail) {
+void testErrors(i32 hashnolow, i32 hashnohigh, i32 printResults,
+                i32 printPassFail) {
     USHAContext usha;
-    uint8_t Message_Digest[USHAMaxHashSize];
-    int hashno, err;
+    u8 Message_Digest[USHAMaxHashSize];
+    i32 hashno, err;
 
     for (hashno = hashnolow; hashno <= hashnohigh; hashno++) {
         memset(&usha, '\343', sizeof(usha)); /* force bad data */
         USHAReset(&usha, hashno);
         USHAResult(&usha, Message_Digest);
-        err = USHAInput(&usha, (const unsigned char *)"foo", 3);
+        err = USHAInput(&usha, (const u8 *)"foo", 3);
         if (printResults == PRINTTEXT)
             printf("\nError %d. Should be %d.\n", err, shaStateError);
 
@@ -1374,15 +1367,15 @@ void testErrors(int hashnolow, int hashnohigh, int printResults,
 }
 
 /* replace a hex string in place with its value */
-int unhexStr(char *hexstr) {
-    char *o = hexstr;
-    int len = 0, nibble1 = 0, nibble2 = 0;
+i32 unhexStr(u8 *hexstr) {
+    u8 *o = hexstr;
+    i32 len = 0, nibble1 = 0, nibble2 = 0;
     if (!hexstr)
         return 0;
     for (; *hexstr; hexstr++) {
-        if (isalpha((int)(unsigned char)(*hexstr))) {
-            nibble1 = tolower((int)(unsigned char)(*hexstr)) - 'a' + 10;
-        } else if (isdigit((int)(unsigned char)(*hexstr))) {
+        if (isalpha((i32)(u8)(*hexstr))) {
+            nibble1 = tolower((i32)(u8)(*hexstr)) - 'a' + 10;
+        } else if (isdigit((i32)(u8)(*hexstr))) {
             nibble1 = *hexstr - '0';
 
         } else {
@@ -1390,43 +1383,43 @@ int unhexStr(char *hexstr) {
         }
         if (!*++hexstr)
             break;
-        if (isalpha((int)(unsigned char)(*hexstr))) {
-            nibble2 = tolower((int)(unsigned char)(*hexstr)) - 'a' + 10;
-        } else if (isdigit((int)(unsigned char)(*hexstr))) {
+        if (isalpha((i32)(u8)(*hexstr))) {
+            nibble2 = tolower((i32)(u8)(*hexstr)) - 'a' + 10;
+        } else if (isdigit((i32)(u8)(*hexstr))) {
             nibble2 = *hexstr - '0';
         } else {
             printf("\nError: bad hex character '%c'\n", *hexstr);
         }
-        *o++ = (char)((nibble1 << 4) | nibble2);
+        *o++ = (u8)((nibble1 << 4) | nibble2);
         len++;
     }
     return len;
 }
 
-int main(int argc, char **argv) {
-    int i, err;
-    int loopno, loopnohigh = 1;
-    int hashno, hashnolow = 0, hashnohigh = HASHCOUNT - 1;
-    int testno, testnolow = 0, testnohigh;
-    int ntestnohigh = 0;
-    int printResults = PRINTTEXT;
-    int printPassFail = 1;
-    int checkErrors = 0;
-    char *hashstr = 0;
-    int hashlen = 0;
-    const char *resultstr = 0;
-    char *randomseedstr = 0;
-    int runHmacTests = 0;
-    int runHkdfTests = 0;
-    char *hmacKey = 0;
-    int hmaclen = 0;
-    char *info = 0;
-    int infolen = 0, okmlen = 0;
-    int randomcount = RANDOMCOUNT;
-    const char *hashfilename = 0;
-    const char *hashFilename = 0;
-    int extrabits = 0, numberExtrabits = 0;
-    int strIsHex = 0;
+i32 main(i32 argc, char **argv) {
+    i32 i, err;
+    i32 loopno, loopnohigh = 1;
+    i32 hashno, hashnolow = 0, hashnohigh = HASHCOUNT - 1;
+    i32 testno, testnolow = 0, testnohigh;
+    i32 ntestnohigh = 0;
+    i32 printResults = PRINTTEXT;
+    i32 printPassFail = 1;
+    i32 checkErrors = 0;
+    u8 *hashstr = 0;
+    i32 hashlen = 0;
+    const u8 *resultstr = 0;
+    u8 *randomseedstr = 0;
+    i32 runHmacTests = 0;
+    i32 runHkdfTests = 0;
+    u8 *hmacKey = 0;
+    i32 hmaclen = 0;
+    u8 *info = 0;
+    i32 infolen = 0, okmlen = 0;
+    i32 randomcount = RANDOMCOUNT;
+    const u8 *hashfilename = 0;
+    const u8 *hashFilename = 0;
+    i32 extrabits = 0, numberExtrabits = 0;
+    i32 strIsHex = 0;
 
     if ('A' != 0x41) {
         fprintf(stderr, "%s: these tests require ASCII\n", argv[0]);
@@ -1502,11 +1495,11 @@ int main(int argc, char **argv) {
         for (loopno = 1; (loopno <= loopnohigh) && (err == shaSuccess);
              ++loopno) {
             if (hashstr)
-                err = hash(
-                    0, loopno, hashno, hashstr, hashlen, 1, numberExtrabits,
-                    extrabits, (const unsigned char *)hmacKey, hmaclen,
-                    (const uint8_t *)info, infolen, okmlen, resultstr,
-                    hashes[hashno].hashsize, printResults, printPassFail);
+                err =
+                    hash(0, loopno, hashno, hashstr, hashlen, 1,
+                         numberExtrabits, extrabits, (const u8 *)hmacKey,
+                         hmaclen, (const u8 *)info, infolen, okmlen, resultstr,
+                         hashes[hashno].hashsize, printResults, printPassFail);
 
             else if (randomseedstr)
                 randomtest(hashno, randomseedstr, hashes[hashno].hashsize, 0,
@@ -1514,16 +1507,16 @@ int main(int argc, char **argv) {
 
             else if (hashfilename)
                 err = hashfile(hashno, hashfilename, extrabits, numberExtrabits,
-                               0, (const unsigned char *)hmacKey, hmaclen,
-                               (const uint8_t *)info, infolen, okmlen,
-                               resultstr, hashes[hashno].hashsize, printResults,
+                               0, (const u8 *)hmacKey, hmaclen,
+                               (const u8 *)info, infolen, okmlen, resultstr,
+                               hashes[hashno].hashsize, printResults,
                                printPassFail);
 
             else if (hashFilename)
                 err = hashfile(hashno, hashFilename, extrabits, numberExtrabits,
-                               1, (const unsigned char *)hmacKey, hmaclen,
-                               (const uint8_t *)info, infolen, okmlen,
-                               resultstr, hashes[hashno].hashsize, printResults,
+                               1, (const u8 *)hmacKey, hmaclen,
+                               (const u8 *)info, infolen, okmlen, resultstr,
+                               hashes[hashno].hashsize, printResults,
                                printPassFail);
 
             else /* standard tests */ {
@@ -1543,12 +1536,12 @@ int main(int argc, char **argv) {
                                 ? hmachashes[testno].datalength[1]
                                 : hmachashes[testno].datalength[0],
                             1, 0, 0,
-                            (const unsigned char
-                                 *)(hmachashes[testno].keyarray[hashno]
-                                        ? hmachashes[testno].keyarray[hashno]
-                                    : hmachashes[testno].keyarray[1]
-                                        ? hmachashes[testno].keyarray[1]
-                                        : hmachashes[testno].keyarray[0]),
+                            (const u8 *)(hmachashes[testno].keyarray[hashno]
+                                             ? hmachashes[testno]
+                                                   .keyarray[hashno]
+                                         : hmachashes[testno].keyarray[1]
+                                             ? hmachashes[testno].keyarray[1]
+                                             : hmachashes[testno].keyarray[0]),
                             hmachashes[testno].keylength[hashno]
                                 ? hmachashes[testno].keylength[hashno]
                             : hmachashes[testno].keylength[1]
@@ -1595,10 +1588,10 @@ int main(int argc, char **argv) {
  * Compare two strings, case independently.
  * Equivalent to strcasecmp() found on some systems.
  */
-int scasecmp(const char *s1, const char *s2) {
+i32 scasecmp(const u8 *s1, const u8 *s2) {
     for (;;) {
-        char u1 = tolower((int)(unsigned char)(*s1++));
-        char u2 = tolower((int)(unsigned char)(*s2++));
+        u8 u1 = tolower((i32)(u8)(*s1++));
+        u8 u2 = tolower((i32)(u8)(*s2++));
         if (u1 != u2)
             return u1 - u2;
         if (u1 == '\0')

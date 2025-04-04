@@ -36,7 +36,7 @@
  *
  * Caveats:
  *   SHA-384 and SHA-512 are designed to work with messages less
- *   than 2^128 bits long.  This implementation uses SHA384/512Input()
+ *   than 2^128 bits u64.  This implementation uses SHA384/512Input()
  *   to hash the bits that are a multiple of the size of an 8-bit
  *   octet, and then optionally uses SHA384/256FinalBits()
  *   to hash the final few bits of the input.
@@ -56,7 +56,7 @@
  * Define shift, rotate left, and rotate right functions
  */
 #define SHA512_SHR(bits, word, ret)                                            \
-    (/* (((uint64_t)((word))) >> (bits)) */                                    \
+    (/* (((u64)((word))) >> (bits)) */                                         \
      (ret)[0] = (((bits) < 32) && ((bits) >= 0)) ? ((word)[0] >> (bits)) : 0,  \
      (ret)[1] = ((bits) > 32)    ? ((word)[0] >> ((bits) - 32))                \
                 : ((bits) == 32) ? (word)[0]                                   \
@@ -65,7 +65,7 @@
                     : 0)
 
 #define SHA512_SHL(bits, word, ret)                                            \
-    (/* (((uint64_t)(word)) << (bits)) */                                      \
+    (/* (((u64)(word)) << (bits)) */                                           \
      (ret)[0] = ((bits) > 32)    ? ((word)[1] << ((bits) - 32))                \
                 : ((bits) == 32) ? (word)[1]                                   \
                 : ((bits) >= 0)                                                \
@@ -106,7 +106,7 @@
 /*
  * Add the 4word value in word2 to word1.
  */
-static uint32_t ADDTO4_temp, ADDTO4_temp2;
+static u32 ADDTO4_temp, ADDTO4_temp2;
 #define SHA512_ADDTO4(word1, word2)                                            \
     (ADDTO4_temp = (word1)[3], (word1)[3] += (word2)[3],                       \
      ADDTO4_temp2 = (word1)[2],                                                \
@@ -118,7 +118,7 @@ static uint32_t ADDTO4_temp, ADDTO4_temp2;
 /*
  * Add the 2word value in word2 to word1.
  */
-static uint32_t ADDTO2_temp;
+static u32 ADDTO2_temp;
 #define SHA512_ADDTO2(word1, word2)                                            \
     (ADDTO2_temp = (word1)[1], (word1)[1] += (word2)[1],                       \
      (word1)[0] += (word2)[0] + ((word1)[1] < ADDTO2_temp))
@@ -126,7 +126,7 @@ static uint32_t ADDTO2_temp;
 /*
  * SHA rotate   ((word >> bits) | (word << (64-bits)))
  */
-static uint32_t ROTR_temp1[2], ROTR_temp2[2];
+static u32 ROTR_temp1[2], ROTR_temp2[2];
 #define SHA512_ROTR(bits, word, ret)                                           \
     (SHA512_SHR((bits), (word), ROTR_temp1),                                   \
      SHA512_SHL(64 - (bits), (word), ROTR_temp2),                              \
@@ -137,8 +137,7 @@ static uint32_t ROTR_temp1[2], ROTR_temp2[2];
  *
  *  SHA512_ROTR(28,word) ^ SHA512_ROTR(34,word) ^ SHA512_ROTR(39,word)
  */
-static uint32_t SIGMA0_temp1[2], SIGMA0_temp2[2], SIGMA0_temp3[2],
-    SIGMA0_temp4[2];
+static u32 SIGMA0_temp1[2], SIGMA0_temp2[2], SIGMA0_temp3[2], SIGMA0_temp4[2];
 #define SHA512_SIGMA0(word, ret)                                               \
     (SHA512_ROTR(28, (word), SIGMA0_temp1),                                    \
      SHA512_ROTR(34, (word), SIGMA0_temp2),                                    \
@@ -149,8 +148,7 @@ static uint32_t SIGMA0_temp1[2], SIGMA0_temp2[2], SIGMA0_temp3[2],
 /*
  * SHA512_ROTR(14,word) ^ SHA512_ROTR(18,word) ^ SHA512_ROTR(41,word)
  */
-static uint32_t SIGMA1_temp1[2], SIGMA1_temp2[2], SIGMA1_temp3[2],
-    SIGMA1_temp4[2];
+static u32 SIGMA1_temp1[2], SIGMA1_temp2[2], SIGMA1_temp3[2], SIGMA1_temp4[2];
 #define SHA512_SIGMA1(word, ret)                                               \
     (SHA512_ROTR(14, (word), SIGMA1_temp1),                                    \
      SHA512_ROTR(18, (word), SIGMA1_temp2),                                    \
@@ -161,8 +159,7 @@ static uint32_t SIGMA1_temp1[2], SIGMA1_temp2[2], SIGMA1_temp3[2],
 /*
  * (SHA512_ROTR( 1,word) ^ SHA512_ROTR( 8,word) ^ SHA512_SHR( 7,word))
  */
-static uint32_t sigma0_temp1[2], sigma0_temp2[2], sigma0_temp3[2],
-    sigma0_temp4[2];
+static u32 sigma0_temp1[2], sigma0_temp2[2], sigma0_temp3[2], sigma0_temp4[2];
 #define SHA512_sigma0(word, ret)                                               \
     (SHA512_ROTR(1, (word), sigma0_temp1),                                     \
      SHA512_ROTR(8, (word), sigma0_temp2),                                     \
@@ -173,8 +170,7 @@ static uint32_t sigma0_temp1[2], sigma0_temp2[2], sigma0_temp3[2],
 /*
  * (SHA512_ROTR(19,word) ^ SHA512_ROTR(61,word) ^ SHA512_SHR( 6,word))
  */
-static uint32_t sigma1_temp1[2], sigma1_temp2[2], sigma1_temp3[2],
-    sigma1_temp4[2];
+static u32 sigma1_temp1[2], sigma1_temp2[2], sigma1_temp3[2], sigma1_temp4[2];
 #define SHA512_sigma1(word, ret)                                               \
     (SHA512_ROTR(19, (word), sigma1_temp1),                                    \
      SHA512_ROTR(61, (word), sigma1_temp2),                                    \
@@ -187,7 +183,7 @@ static uint32_t sigma1_temp1[2], sigma1_temp2[2], sigma1_temp3[2],
  * These definitions are the ones used in FIPS 180-3, section 4.1.3
  *  Ch(x,y,z)   ((x & y) ^ (~x & z))
  */
-static uint32_t Ch_temp1[2], Ch_temp2[2], Ch_temp3[2];
+static u32 Ch_temp1[2], Ch_temp2[2], Ch_temp3[2];
 #define SHA_Ch(x, y, z, ret)                                                   \
     (SHA512_AND(x, y, Ch_temp1), SHA512_TILDA(x, Ch_temp2),                    \
      SHA512_AND(Ch_temp2, z, Ch_temp3), SHA512_XOR(Ch_temp1, Ch_temp3, (ret)))
@@ -195,7 +191,7 @@ static uint32_t Ch_temp1[2], Ch_temp2[2], Ch_temp3[2];
 /*
  *  Maj(x,y,z)  (((x)&(y)) ^ ((x)&(z)) ^ ((y)&(z)))
  */
-static uint32_t Maj_temp1[2], Maj_temp2[2], Maj_temp3[2], Maj_temp4[2];
+static u32 Maj_temp1[2], Maj_temp2[2], Maj_temp3[2], Maj_temp4[2];
 #define SHA_Maj(x, y, z, ret)                                                  \
     (SHA512_AND(x, y, Maj_temp1), SHA512_AND(x, z, Maj_temp2),                 \
      SHA512_AND(y, z, Maj_temp3), SHA512_XOR(Maj_temp2, Maj_temp3, Maj_temp4), \
@@ -224,7 +220,7 @@ static uint32_t Maj_temp1[2], Maj_temp2[2], Maj_temp3[2], Maj_temp4[2];
  * Add "length" to the length.
  * Set Corrupted when overflow has occurred.
  */
-static uint32_t addTemp[4] = {0, 0, 0, 0};
+static u32 addTemp[4] = {0, 0, 0, 0};
 #define SHA384_512AddLength(context, length)                                   \
     (addTemp[3] = (length), SHA512_ADDTO4((context)->Length, addTemp),         \
      (context)->Corrupted =                                                    \
@@ -234,20 +230,19 @@ static uint32_t addTemp[4] = {0, 0, 0, 0};
              : (context)->Corrupted)
 
 /* Local Function Prototypes */
-static int SHA384_512Reset(SHA512Context *context,
-                           uint32_t H0[SHA512HashSize / 4]);
+static i32 SHA384_512Reset(SHA512Context *context, u32 H0[SHA512HashSize / 4]);
 static void SHA384_512ProcessMessageBlock(SHA512Context *context);
-static void SHA384_512Finalize(SHA512Context *context, uint8_t Pad_Byte);
-static void SHA384_512PadMessage(SHA512Context *context, uint8_t Pad_Byte);
-static int SHA384_512ResultN(SHA512Context *context, uint8_t Message_Digest[],
-                             int HashSize);
+static void SHA384_512Finalize(SHA512Context *context, u8 Pad_Byte);
+static void SHA384_512PadMessage(SHA512Context *context, u8 Pad_Byte);
+static i32 SHA384_512ResultN(SHA512Context *context, u8 Message_Digest[],
+                             i32 HashSize);
 
 /* Initial Hash Values: FIPS 180-3 sections 5.3.4 and 5.3.5 */
-static uint32_t SHA384_H0[SHA512HashSize / 4] = {
+static u32 SHA384_H0[SHA512HashSize / 4] = {
     0xCBBB9D5D, 0xC1059ED8, 0x629A292A, 0x367CD507, 0x9159015A, 0x3070DD17,
     0x152FECD8, 0xF70E5939, 0x67332667, 0xFFC00B31, 0x8EB44A87, 0x68581511,
     0xDB0C2E0D, 0x64F98FA7, 0x47B5481D, 0xBEFA4FA4};
-static uint32_t SHA512_H0[SHA512HashSize / 4] = {
+static u32 SHA512_H0[SHA512HashSize / 4] = {
     0x6A09E667, 0xF3BCC908, 0xBB67AE85, 0x84CAA73B, 0x3C6EF372, 0xFE94F82B,
     0xA54FF53A, 0x5F1D36F1, 0x510E527F, 0xADE682D1, 0x9B05688C, 0x2B3E6C1F,
     0x1F83D9AB, 0xFB41BD6B, 0x5BE0CD19, 0x137E2179};
@@ -257,9 +252,9 @@ static uint32_t SHA512_H0[SHA512HashSize / 4] = {
 #include "sha-private.h"
 
 /* Define the SHA shift, rotate left and rotate right macros */
-#define SHA512_SHR(bits, word) (((uint64_t)(word)) >> (bits))
+#define SHA512_SHR(bits, word) (((u64)(word)) >> (bits))
 #define SHA512_ROTR(bits, word)                                                \
-    ((((uint64_t)(word)) >> (bits)) | (((uint64_t)(word)) << (64 - (bits))))
+    ((((u64)(word)) >> (bits)) | (((u64)(word)) << (64 - (bits))))
 
 /*
  * Define the SHA SIGMA and sigma macros
@@ -279,7 +274,7 @@ static uint32_t SHA512_H0[SHA512HashSize / 4] = {
  * Add "length" to the length.
  * Set Corrupted when overflow has occurred.
  */
-static uint64_t addTemp;
+static u64 addTemp;
 #define SHA384_512AddLength(context, length)                                   \
     (addTemp = context->Length_Low,                                            \
      context->Corrupted = ((context->Length_Low += length) < addTemp) &&       \
@@ -288,23 +283,22 @@ static uint64_t addTemp;
                               : (context)->Corrupted)
 
 /* Local Function Prototypes */
-static int SHA384_512Reset(SHA512Context *context,
-                           uint64_t H0[SHA512HashSize / 8]);
+static i32 SHA384_512Reset(SHA512Context *context, u64 H0[SHA512HashSize / 8]);
 static void SHA384_512ProcessMessageBlock(SHA512Context *context);
-static void SHA384_512Finalize(SHA512Context *context, uint8_t Pad_Byte);
-static void SHA384_512PadMessage(SHA512Context *context, uint8_t Pad_Byte);
-static int SHA384_512ResultN(SHA512Context *context, uint8_t Message_Digest[],
-                             int HashSize);
+static void SHA384_512Finalize(SHA512Context *context, u8 Pad_Byte);
+static void SHA384_512PadMessage(SHA512Context *context, u8 Pad_Byte);
+static i32 SHA384_512ResultN(SHA512Context *context, u8 Message_Digest[],
+                             i32 HashSize);
 
 /* Initial Hash Values: FIPS 180-3 sections 5.3.4 and 5.3.5 */
-static uint64_t SHA384_H0[] = {0xCBBB9D5DC1059ED8ll, 0x629A292A367CD507ll,
-                               0x9159015A3070DD17ll, 0x152FECD8F70E5939ll,
-                               0x67332667FFC00B31ll, 0x8EB44A8768581511ll,
-                               0xDB0C2E0D64F98FA7ll, 0x47B5481DBEFA4FA4ll};
-static uint64_t SHA512_H0[] = {0x6A09E667F3BCC908ll, 0xBB67AE8584CAA73Bll,
-                               0x3C6EF372FE94F82Bll, 0xA54FF53A5F1D36F1ll,
-                               0x510E527FADE682D1ll, 0x9B05688C2B3E6C1Fll,
-                               0x1F83D9ABFB41BD6Bll, 0x5BE0CD19137E2179ll};
+static u64 SHA384_H0[] = {0xCBBB9D5DC1059ED8ll, 0x629A292A367CD507ll,
+                          0x9159015A3070DD17ll, 0x152FECD8F70E5939ll,
+                          0x67332667FFC00B31ll, 0x8EB44A8768581511ll,
+                          0xDB0C2E0D64F98FA7ll, 0x47B5481DBEFA4FA4ll};
+static u64 SHA512_H0[] = {0x6A09E667F3BCC908ll, 0xBB67AE8584CAA73Bll,
+                          0x3C6EF372FE94F82Bll, 0xA54FF53A5F1D36F1ll,
+                          0x510E527FADE682D1ll, 0x9B05688C2B3E6C1Fll,
+                          0x1F83D9ABFB41BD6Bll, 0x5BE0CD19137E2179ll};
 
 #endif /* USE_32BIT_ONLY */
 
@@ -323,7 +317,7 @@ static uint64_t SHA512_H0[] = {0x6A09E667F3BCC908ll, 0xBB67AE8584CAA73Bll,
  *   sha Error Code.
  *
  */
-int SHA384Reset(SHA384Context *context) {
+i32 SHA384Reset(SHA384Context *context) {
     return SHA384_512Reset(context, SHA384_H0);
 }
 
@@ -347,8 +341,7 @@ int SHA384Reset(SHA384Context *context) {
  *   sha Error Code.
  *
  */
-int SHA384Input(SHA384Context *context, const uint8_t *message_array,
-                unsigned int length) {
+i32 SHA384Input(SHA384Context *context, const u8 *message_array, u32 length) {
     return SHA512Input(context, message_array, length);
 }
 
@@ -372,8 +365,7 @@ int SHA384Input(SHA384Context *context, const uint8_t *message_array,
  *   sha Error Code.
  *
  */
-int SHA384FinalBits(SHA384Context *context, uint8_t message_bits,
-                    unsigned int length) {
+i32 SHA384FinalBits(SHA384Context *context, u8 message_bits, u32 length) {
     return SHA512FinalBits(context, message_bits, length);
 }
 
@@ -397,8 +389,7 @@ int SHA384FinalBits(SHA384Context *context, uint8_t message_bits,
  *   sha Error Code.
  *
  */
-int SHA384Result(SHA384Context *context,
-                 uint8_t Message_Digest[SHA384HashSize]) {
+i32 SHA384Result(SHA384Context *context, u8 Message_Digest[SHA384HashSize]) {
     return SHA384_512ResultN(context, Message_Digest, SHA384HashSize);
 }
 
@@ -417,7 +408,7 @@ int SHA384Result(SHA384Context *context,
  *   sha Error Code.
  *
  */
-int SHA512Reset(SHA512Context *context) {
+i32 SHA512Reset(SHA512Context *context) {
     return SHA384_512Reset(context, SHA512_H0);
 }
 
@@ -441,8 +432,7 @@ int SHA512Reset(SHA512Context *context) {
  *   sha Error Code.
  *
  */
-int SHA512Input(SHA512Context *context, const uint8_t *message_array,
-                unsigned int length) {
+i32 SHA512Input(SHA512Context *context, const u8 *message_array, u32 length) {
     if (!context)
         return shaNull;
     if (!length)
@@ -487,14 +477,13 @@ int SHA512Input(SHA512Context *context, const uint8_t *message_array,
  *   sha Error Code.
  *
  */
-int SHA512FinalBits(SHA512Context *context, uint8_t message_bits,
-                    unsigned int length) {
-    static uint8_t masks[8] = {
+i32 SHA512FinalBits(SHA512Context *context, u8 message_bits, u32 length) {
+    static u8 masks[8] = {
         /* 0 0b00000000 */ 0x00, /* 1 0b10000000 */ 0x80,
         /* 2 0b11000000 */ 0xC0, /* 3 0b11100000 */ 0xE0,
         /* 4 0b11110000 */ 0xF0, /* 5 0b11111000 */ 0xF8,
         /* 6 0b11111100 */ 0xFC, /* 7 0b11111110 */ 0xFE};
-    static uint8_t markbit[8] = {
+    static u8 markbit[8] = {
         /* 0 0b10000000 */ 0x80, /* 1 0b01000000 */ 0x40,
         /* 2 0b00100000 */ 0x20, /* 3 0b00010000 */ 0x10,
         /* 4 0b00001000 */ 0x08, /* 5 0b00000100 */ 0x04,
@@ -512,8 +501,8 @@ int SHA512FinalBits(SHA512Context *context, uint8_t message_bits,
         return context->Corrupted = shaBadParam;
 
     SHA384_512AddLength(context, length);
-    SHA384_512Finalize(
-        context, (uint8_t)((message_bits & masks[length]) | markbit[length]));
+    SHA384_512Finalize(context,
+                       (u8)((message_bits & masks[length]) | markbit[length]));
 
     return context->Corrupted;
 }
@@ -538,8 +527,7 @@ int SHA512FinalBits(SHA512Context *context, uint8_t message_bits,
  *   sha Error Code.
  *
  */
-int SHA512Result(SHA512Context *context,
-                 uint8_t Message_Digest[SHA512HashSize]) {
+i32 SHA512Result(SHA512Context *context, u8 Message_Digest[SHA512HashSize]) {
     return SHA384_512ResultN(context, Message_Digest, SHA512HashSize);
 }
 
@@ -562,14 +550,12 @@ int SHA512Result(SHA512Context *context,
  *
  */
 #ifdef USE_32BIT_ONLY
-static int SHA384_512Reset(SHA512Context *context,
-                           uint32_t H0[SHA512HashSize / 4])
+static i32 SHA384_512Reset(SHA512Context *context, u32 H0[SHA512HashSize / 4])
 #else  /* !USE_32BIT_ONLY */
-static int SHA384_512Reset(SHA512Context *context,
-                           uint64_t H0[SHA512HashSize / 8])
+static i32 SHA384_512Reset(SHA512Context *context, u64 H0[SHA512HashSize / 8])
 #endif /* USE_32BIT_ONLY */
 {
-    int i;
+    i32 i;
     if (!context)
         return shaNull;
     context->Message_Block_Index = 0;
@@ -617,7 +603,7 @@ static int SHA384_512Reset(SHA512Context *context,
 static void SHA384_512ProcessMessageBlock(SHA512Context *context) {
 #ifdef USE_32BIT_ONLY
     /* Constants defined in FIPS 180-3, section 4.2.3 */
-    static const uint32_t K[80 * 2] = {
+    static const u32 K[80 * 2] = {
         0x428A2F98, 0xD728AE22, 0x71374491, 0x23EF65CD, 0xB5C0FBCF, 0xEC4D3B2F,
         0xE9B5DBA5, 0x8189DBBC, 0x3956C25B, 0xF348B538, 0x59F111F1, 0xB605D019,
         0x923F82A4, 0xAF194F9B, 0xAB1C5ED5, 0xDA6D8118, 0xD807AA98, 0xA3030242,
@@ -645,32 +631,32 @@ static void SHA384_512ProcessMessageBlock(SHA512Context *context) {
         0x28DB77F5, 0x23047D84, 0x32CAAB7B, 0x40C72493, 0x3C9EBE0A, 0x15C9BEBC,
         0x431D67C4, 0x9C100D4C, 0x4CC5D4BE, 0xCB3E42B6, 0x597F299C, 0xFC657E2A,
         0x5FCB6FAB, 0x3AD6FAEC, 0x6C44198C, 0x4A475817};
-    int t, t2, t8;               /* Loop counter */
-    uint32_t temp1[2], temp2[2], /* Temporary word values */
+    i32 t, t2, t8;          /* Loop counter */
+    u32 temp1[2], temp2[2], /* Temporary word values */
         temp3[2], temp4[2], temp5[2];
-    uint32_t W[2 * 80];              /* Word sequence */
-    uint32_t A[2], B[2], C[2], D[2], /* Word buffers */
+    u32 W[2 * 80];              /* Word sequence */
+    u32 A[2], B[2], C[2], D[2], /* Word buffers */
         E[2], F[2], G[2], H[2];
 
     /* Initialize the first 16 words in the array W */
     for (t = t2 = t8 = 0; t < 16; t++, t8 += 8) {
-        W[t2++] = ((((uint32_t)context->Message_Block[t8])) << 24) |
-                  ((((uint32_t)context->Message_Block[t8 + 1])) << 16) |
-                  ((((uint32_t)context->Message_Block[t8 + 2])) << 8) |
-                  ((((uint32_t)context->Message_Block[t8 + 3])));
-        W[t2++] = ((((uint32_t)context->Message_Block[t8 + 4])) << 24) |
-                  ((((uint32_t)context->Message_Block[t8 + 5])) << 16) |
-                  ((((uint32_t)context->Message_Block[t8 + 6])) << 8) |
-                  ((((uint32_t)context->Message_Block[t8 + 7])));
+        W[t2++] = ((((u32)context->Message_Block[t8])) << 24) |
+                  ((((u32)context->Message_Block[t8 + 1])) << 16) |
+                  ((((u32)context->Message_Block[t8 + 2])) << 8) |
+                  ((((u32)context->Message_Block[t8 + 3])));
+        W[t2++] = ((((u32)context->Message_Block[t8 + 4])) << 24) |
+                  ((((u32)context->Message_Block[t8 + 5])) << 16) |
+                  ((((u32)context->Message_Block[t8 + 6])) << 8) |
+                  ((((u32)context->Message_Block[t8 + 7])));
     }
 
     for (t = 16; t < 80; t++, t2 += 2) {
         /* W[t] = SHA512_sigma1(W[t-2]) + W[t-7] +
           SHA512_sigma0(W[t-15]) + W[t-16]; */
-        uint32_t *Wt2 = &W[t2 - 2 * 2];
-        uint32_t *Wt7 = &W[t2 - 7 * 2];
-        uint32_t *Wt15 = &W[t2 - 15 * 2];
-        uint32_t *Wt16 = &W[t2 - 16 * 2];
+        u32 *Wt2 = &W[t2 - 2 * 2];
+        u32 *Wt7 = &W[t2 - 7 * 2];
+        u32 *Wt15 = &W[t2 - 15 * 2];
+        u32 *Wt16 = &W[t2 - 16 * 2];
         SHA512_sigma1(Wt2, temp1);
         SHA512_ADD(temp1, Wt7, temp2);
         SHA512_sigma0(Wt15, temp1);
@@ -738,7 +724,7 @@ static void SHA384_512ProcessMessageBlock(SHA512Context *context) {
 
 #else  /* !USE_32BIT_ONLY */
     /* Constants defined in FIPS 180-3, section 4.2.3 */
-    static const uint64_t K[80] = {
+    static const u64 K[80] = {
         0x428A2F98D728AE22ll, 0x7137449123EF65CDll, 0xB5C0FBCFEC4D3B2Fll,
         0xE9B5DBA58189DBBCll, 0x3956C25BF348B538ll, 0x59F111F1B605D019ll,
         0x923F82A4AF194F9Bll, 0xAB1C5ED5DA6D8118ll, 0xD807AA98A3030242ll,
@@ -766,23 +752,23 @@ static void SHA384_512ProcessMessageBlock(SHA512Context *context) {
         0x28DB77F523047D84ll, 0x32CAAB7B40C72493ll, 0x3C9EBE0A15C9BEBCll,
         0x431D67C49C100D4Cll, 0x4CC5D4BECB3E42B6ll, 0x597F299CFC657E2All,
         0x5FCB6FAB3AD6FAECll, 0x6C44198C4A475817ll};
-    int t, t8;                       /* Loop counter */
-    uint64_t temp1, temp2;           /* Temporary word value */
-    uint64_t W[80];                  /* Word sequence */
-    uint64_t A, B, C, D, E, F, G, H; /* Word buffers */
+    i32 t, t8;                  /* Loop counter */
+    u64 temp1, temp2;           /* Temporary word value */
+    u64 W[80];                  /* Word sequence */
+    u64 A, B, C, D, E, F, G, H; /* Word buffers */
 
     /*
      * Initialize the first 16 words in the array W
      */
     for (t = t8 = 0; t < 16; t++, t8 += 8)
-        W[t] = ((uint64_t)(context->Message_Block[t8]) << 56) |
-               ((uint64_t)(context->Message_Block[t8 + 1]) << 48) |
-               ((uint64_t)(context->Message_Block[t8 + 2]) << 40) |
-               ((uint64_t)(context->Message_Block[t8 + 3]) << 32) |
-               ((uint64_t)(context->Message_Block[t8 + 4]) << 24) |
-               ((uint64_t)(context->Message_Block[t8 + 5]) << 16) |
-               ((uint64_t)(context->Message_Block[t8 + 6]) << 8) |
-               ((uint64_t)(context->Message_Block[t8 + 7]));
+        W[t] = ((u64)(context->Message_Block[t8]) << 56) |
+               ((u64)(context->Message_Block[t8 + 1]) << 48) |
+               ((u64)(context->Message_Block[t8 + 2]) << 40) |
+               ((u64)(context->Message_Block[t8 + 3]) << 32) |
+               ((u64)(context->Message_Block[t8 + 4]) << 24) |
+               ((u64)(context->Message_Block[t8 + 5]) << 16) |
+               ((u64)(context->Message_Block[t8 + 6]) << 8) |
+               ((u64)(context->Message_Block[t8 + 7]));
 
     for (t = 16; t < 80; t++)
         W[t] = SHA512_sigma1(W[t - 2]) + W[t - 7] + SHA512_sigma0(W[t - 15]) +
@@ -835,13 +821,13 @@ static void SHA384_512ProcessMessageBlock(SHA512Context *context) {
  *     The last byte to add to the message block before the 0-padding
  *     and length.  This will contain the last bits of the message
  *     followed by another single bit.  If the message was an
- *     exact multiple of 8-bits long, Pad_Byte will be 0x80.
+ *     exact multiple of 8-bits u64, Pad_Byte will be 0x80.
  *
  * Returns:
  *   sha Error Code.
  *
  */
-static void SHA384_512Finalize(SHA512Context *context, uint8_t Pad_Byte) {
+static void SHA384_512Finalize(SHA512Context *context, u8 Pad_Byte) {
     int_least16_t i;
     SHA384_512PadMessage(context, Pad_Byte);
     /* message may be sensitive, clear it out */
@@ -875,13 +861,13 @@ static void SHA384_512Finalize(SHA512Context *context, uint8_t Pad_Byte) {
  *     The last byte to add to the message block before the 0-padding
  *     and length.  This will contain the last bits of the message
  *     followed by another single bit.  If the message was an
- *     exact multiple of 8-bits long, Pad_Byte will be 0x80.
+ *     exact multiple of 8-bits u64, Pad_Byte will be 0x80.
  *
  * Returns:
  *   Nothing.
  *
  */
-static void SHA384_512PadMessage(SHA512Context *context, uint8_t Pad_Byte) {
+static void SHA384_512PadMessage(SHA512Context *context, u8 Pad_Byte) {
     /*
      * Check to see if the current message block is too small to hold
      * the initial padding bits and length.  If so, we will pad the
@@ -904,41 +890,41 @@ static void SHA384_512PadMessage(SHA512Context *context, uint8_t Pad_Byte) {
      * Store the message length as the last 16 octets
      */
 #ifdef USE_32BIT_ONLY
-    context->Message_Block[112] = (uint8_t)(context->Length[0] >> 24);
-    context->Message_Block[113] = (uint8_t)(context->Length[0] >> 16);
-    context->Message_Block[114] = (uint8_t)(context->Length[0] >> 8);
-    context->Message_Block[115] = (uint8_t)(context->Length[0]);
-    context->Message_Block[116] = (uint8_t)(context->Length[1] >> 24);
-    context->Message_Block[117] = (uint8_t)(context->Length[1] >> 16);
-    context->Message_Block[118] = (uint8_t)(context->Length[1] >> 8);
-    context->Message_Block[119] = (uint8_t)(context->Length[1]);
+    context->Message_Block[112] = (u8)(context->Length[0] >> 24);
+    context->Message_Block[113] = (u8)(context->Length[0] >> 16);
+    context->Message_Block[114] = (u8)(context->Length[0] >> 8);
+    context->Message_Block[115] = (u8)(context->Length[0]);
+    context->Message_Block[116] = (u8)(context->Length[1] >> 24);
+    context->Message_Block[117] = (u8)(context->Length[1] >> 16);
+    context->Message_Block[118] = (u8)(context->Length[1] >> 8);
+    context->Message_Block[119] = (u8)(context->Length[1]);
 
-    context->Message_Block[120] = (uint8_t)(context->Length[2] >> 24);
-    context->Message_Block[121] = (uint8_t)(context->Length[2] >> 16);
-    context->Message_Block[122] = (uint8_t)(context->Length[2] >> 8);
-    context->Message_Block[123] = (uint8_t)(context->Length[2]);
-    context->Message_Block[124] = (uint8_t)(context->Length[3] >> 24);
-    context->Message_Block[125] = (uint8_t)(context->Length[3] >> 16);
-    context->Message_Block[126] = (uint8_t)(context->Length[3] >> 8);
-    context->Message_Block[127] = (uint8_t)(context->Length[3]);
+    context->Message_Block[120] = (u8)(context->Length[2] >> 24);
+    context->Message_Block[121] = (u8)(context->Length[2] >> 16);
+    context->Message_Block[122] = (u8)(context->Length[2] >> 8);
+    context->Message_Block[123] = (u8)(context->Length[2]);
+    context->Message_Block[124] = (u8)(context->Length[3] >> 24);
+    context->Message_Block[125] = (u8)(context->Length[3] >> 16);
+    context->Message_Block[126] = (u8)(context->Length[3] >> 8);
+    context->Message_Block[127] = (u8)(context->Length[3]);
 #else  /* !USE_32BIT_ONLY */
-    context->Message_Block[112] = (uint8_t)(context->Length_High >> 56);
-    context->Message_Block[113] = (uint8_t)(context->Length_High >> 48);
-    context->Message_Block[114] = (uint8_t)(context->Length_High >> 40);
-    context->Message_Block[115] = (uint8_t)(context->Length_High >> 32);
-    context->Message_Block[116] = (uint8_t)(context->Length_High >> 24);
-    context->Message_Block[117] = (uint8_t)(context->Length_High >> 16);
-    context->Message_Block[118] = (uint8_t)(context->Length_High >> 8);
-    context->Message_Block[119] = (uint8_t)(context->Length_High);
+    context->Message_Block[112] = (u8)(context->Length_High >> 56);
+    context->Message_Block[113] = (u8)(context->Length_High >> 48);
+    context->Message_Block[114] = (u8)(context->Length_High >> 40);
+    context->Message_Block[115] = (u8)(context->Length_High >> 32);
+    context->Message_Block[116] = (u8)(context->Length_High >> 24);
+    context->Message_Block[117] = (u8)(context->Length_High >> 16);
+    context->Message_Block[118] = (u8)(context->Length_High >> 8);
+    context->Message_Block[119] = (u8)(context->Length_High);
 
-    context->Message_Block[120] = (uint8_t)(context->Length_Low >> 56);
-    context->Message_Block[121] = (uint8_t)(context->Length_Low >> 48);
-    context->Message_Block[122] = (uint8_t)(context->Length_Low >> 40);
-    context->Message_Block[123] = (uint8_t)(context->Length_Low >> 32);
-    context->Message_Block[124] = (uint8_t)(context->Length_Low >> 24);
-    context->Message_Block[125] = (uint8_t)(context->Length_Low >> 16);
-    context->Message_Block[126] = (uint8_t)(context->Length_Low >> 8);
-    context->Message_Block[127] = (uint8_t)(context->Length_Low);
+    context->Message_Block[120] = (u8)(context->Length_Low >> 56);
+    context->Message_Block[121] = (u8)(context->Length_Low >> 48);
+    context->Message_Block[122] = (u8)(context->Length_Low >> 40);
+    context->Message_Block[123] = (u8)(context->Length_Low >> 32);
+    context->Message_Block[124] = (u8)(context->Length_Low >> 24);
+    context->Message_Block[125] = (u8)(context->Length_Low >> 16);
+    context->Message_Block[126] = (u8)(context->Length_Low >> 8);
+    context->Message_Block[127] = (u8)(context->Length_Low);
 #endif /* USE_32BIT_ONLY */
 
     SHA384_512ProcessMessageBlock(context);
@@ -966,11 +952,11 @@ static void SHA384_512PadMessage(SHA512Context *context, uint8_t Pad_Byte) {
  *   sha Error Code.
  *
  */
-static int SHA384_512ResultN(SHA512Context *context, uint8_t Message_Digest[],
-                             int HashSize) {
-    int i;
+static i32 SHA384_512ResultN(SHA512Context *context, u8 Message_Digest[],
+                             i32 HashSize) {
+    i32 i;
 #ifdef USE_32BIT_ONLY
-    int i2;
+    i32 i2;
 #endif /* USE_32BIT_ONLY */
 
     if (!context)
@@ -985,19 +971,19 @@ static int SHA384_512ResultN(SHA512Context *context, uint8_t Message_Digest[],
 
 #ifdef USE_32BIT_ONLY
     for (i = i2 = 0; i < HashSize;) {
-        Message_Digest[i++] = (uint8_t)(context->Intermediate_Hash[i2] >> 24);
-        Message_Digest[i++] = (uint8_t)(context->Intermediate_Hash[i2] >> 16);
-        Message_Digest[i++] = (uint8_t)(context->Intermediate_Hash[i2] >> 8);
-        Message_Digest[i++] = (uint8_t)(context->Intermediate_Hash[i2++]);
-        Message_Digest[i++] = (uint8_t)(context->Intermediate_Hash[i2] >> 24);
-        Message_Digest[i++] = (uint8_t)(context->Intermediate_Hash[i2] >> 16);
-        Message_Digest[i++] = (uint8_t)(context->Intermediate_Hash[i2] >> 8);
-        Message_Digest[i++] = (uint8_t)(context->Intermediate_Hash[i2++]);
+        Message_Digest[i++] = (u8)(context->Intermediate_Hash[i2] >> 24);
+        Message_Digest[i++] = (u8)(context->Intermediate_Hash[i2] >> 16);
+        Message_Digest[i++] = (u8)(context->Intermediate_Hash[i2] >> 8);
+        Message_Digest[i++] = (u8)(context->Intermediate_Hash[i2++]);
+        Message_Digest[i++] = (u8)(context->Intermediate_Hash[i2] >> 24);
+        Message_Digest[i++] = (u8)(context->Intermediate_Hash[i2] >> 16);
+        Message_Digest[i++] = (u8)(context->Intermediate_Hash[i2] >> 8);
+        Message_Digest[i++] = (u8)(context->Intermediate_Hash[i2++]);
     }
 #else  /* !USE_32BIT_ONLY */
     for (i = 0; i < HashSize; ++i)
         Message_Digest[i] =
-            (uint8_t)(context->Intermediate_Hash[i >> 3] >> 8 * (7 - (i % 8)));
+            (u8)(context->Intermediate_Hash[i >> 3] >> 8 * (7 - (i % 8)));
 #endif /* USE_32BIT_ONLY */
 
     return shaSuccess;
