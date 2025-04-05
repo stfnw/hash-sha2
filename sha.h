@@ -77,7 +77,7 @@
  *  u64         unsigned 64-bit integer
  *  u32         unsigned 32-bit integer
  *  u8          unsigned 8-bit integer (i.e., u8)
- *  int_least16_t    integer of >= 16 bits
+ *  i16    integer of >= 16 bits
  *
  * See stdint-example.h
  */
@@ -148,7 +148,7 @@ typedef struct SHA1Context {
     u32 Length_High; /* Message length in bits */
     u32 Length_Low;  /* Message length in bits */
 
-    int_least16_t Message_Block_Index; /* Message_Block array index */
+    i16 Message_Block_Index; /* Message_Block array index */
                                        /* 512-bit message blocks */
     u8 Message_Block[SHA1_Message_Block_Size];
 
@@ -166,7 +166,7 @@ typedef struct SHA256Context {
     u32 Length_High; /* Message length in bits */
     u32 Length_Low;  /* Message length in bits */
 
-    int_least16_t Message_Block_Index; /* Message_Block array index */
+    i16 Message_Block_Index; /* Message_Block array index */
                                        /* 512-bit message blocks */
     u8 Message_Block[SHA256_Message_Block_Size];
 
@@ -187,7 +187,7 @@ typedef struct SHA512Context {
     u64 Length_High, Length_Low;               /* Message length in bits */
 #endif                                         /* USE_32BIT_ONLY */
 
-    int_least16_t Message_Block_Index; /* Message_Block array index */
+    i16 Message_Block_Index; /* Message_Block array index */
                                        /* 1024-bit message blocks */
     u8 Message_Block[SHA512_Message_Block_Size];
 

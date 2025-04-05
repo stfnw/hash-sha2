@@ -828,7 +828,7 @@ static void SHA384_512ProcessMessageBlock(SHA512Context *context) {
  *
  */
 static void SHA384_512Finalize(SHA512Context *context, u8 Pad_Byte) {
-    int_least16_t i;
+    i16 i;
     SHA384_512PadMessage(context, Pad_Byte);
     /* message may be sensitive, clear it out */
     for (i = 0; i < SHA512_Message_Block_Size; ++i)
