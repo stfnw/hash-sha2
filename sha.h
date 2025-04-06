@@ -149,7 +149,7 @@ typedef struct SHA1Context {
     u32 Length_Low;  /* Message length in bits */
 
     i16 Message_Block_Index; /* Message_Block array index */
-                                       /* 512-bit message blocks */
+                             /* 512-bit message blocks */
     u8 Message_Block[SHA1_Message_Block_Size];
 
     i32 Computed;  /* Is the hash computed? */
@@ -167,7 +167,7 @@ typedef struct SHA256Context {
     u32 Length_Low;  /* Message length in bits */
 
     i16 Message_Block_Index; /* Message_Block array index */
-                                       /* 512-bit message blocks */
+                             /* 512-bit message blocks */
     u8 Message_Block[SHA256_Message_Block_Size];
 
     i32 Computed;  /* Is the hash computed? */
@@ -188,7 +188,7 @@ typedef struct SHA512Context {
 #endif                                         /* USE_32BIT_ONLY */
 
     i16 Message_Block_Index; /* Message_Block array index */
-                                       /* 1024-bit message blocks */
+                             /* 1024-bit message blocks */
     u8 Message_Block[SHA512_Message_Block_Size];
 
     i32 Computed;  /* Is the hash computed?*/

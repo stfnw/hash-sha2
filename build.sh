@@ -14,3 +14,5 @@ gcc $CFLAGS -c usha.c
 gcc -g -c shatest.c
 
 gcc $CFLAGS -o shatest *.o
+
+gcc $CFLAGS -o standalone-sha1 standalone-sha1.c
