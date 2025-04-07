@@ -83,8 +83,9 @@ u32 SHA_Maj(u32 x, u32 y, u32 z) { return (x & y) ^ (x & z) ^ (y & z); }
 u32 SHA_Parity(u32 x, u32 y, u32 z) { return x ^ y ^ z; }
 
 i32 SHA1Reset(SHA1Context *context) {
-    if (!context)
+    if (!context) {
         return shaNull;
+    }
 
     context->Length = 0;
     context->Message_Block_Index = 0;
@@ -106,30 +107,27 @@ static void SHA1ProcessMessageBlock(SHA1Context *context) {
     /* Constants defined in FIPS 180-3, section 4.2.1 */
     const u32 K[4] = {0x5A827999, 0x6ED9EBA1, 0x8F1BBCDC, 0xCA62C1D6};
 
-    i32 t;             /* Loop counter */
-    u32 temp;          /* Temporary word value */
-    u32 W[80];         /* Word sequence */
-    u32 A, B, C, D, E; /* Word buffers */
+    u32 W[80]; /* Word sequence */
 
     /* Initialize the first 16 words in the array W */
-    for (t = 0; t < 16; t++) {
+    for (i32 t = 0; t < 16; t++) {
         W[t] = ((u32)context->Message_Block[t * 4]) << 24;
         W[t] |= ((u32)context->Message_Block[t * 4 + 1]) << 16;
         W[t] |= ((u32)context->Message_Block[t * 4 + 2]) << 8;
         W[t] |= ((u32)context->Message_Block[t * 4 + 3]);
     }
 
-    for (t = 16; t < 80; t++)
+    for (i32 t = 16; t < 80; t++)
         W[t] = SHA1_ROTL(1, W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16]);
 
-    A = context->Intermediate_Hash[0];
-    B = context->Intermediate_Hash[1];
-    C = context->Intermediate_Hash[2];
-    D = context->Intermediate_Hash[3];
-    E = context->Intermediate_Hash[4];
+    u32 A = context->Intermediate_Hash[0];
+    u32 B = context->Intermediate_Hash[1];
+    u32 C = context->Intermediate_Hash[2];
+    u32 D = context->Intermediate_Hash[3];
+    u32 E = context->Intermediate_Hash[4];
 
-    for (t = 0; t < 20; t++) {
-        temp = SHA1_ROTL(5, A) + SHA_Ch(B, C, D) + E + W[t] + K[0];
+    for (i32 t = 0; t < 20; t++) {
+        u32 temp = SHA1_ROTL(5, A) + SHA_Ch(B, C, D) + E + W[t] + K[0];
         E = D;
         D = C;
         C = SHA1_ROTL(30, B);
@@ -137,8 +135,8 @@ static void SHA1ProcessMessageBlock(SHA1Context *context) {
         A = temp;
     }
 
-    for (t = 20; t < 40; t++) {
-        temp = SHA1_ROTL(5, A) + SHA_Parity(B, C, D) + E + W[t] + K[1];
+    for (i32 t = 20; t < 40; t++) {
+        u32 temp = SHA1_ROTL(5, A) + SHA_Parity(B, C, D) + E + W[t] + K[1];
         E = D;
         D = C;
         C = SHA1_ROTL(30, B);
@@ -146,8 +144,8 @@ static void SHA1ProcessMessageBlock(SHA1Context *context) {
         A = temp;
     }
 
-    for (t = 40; t < 60; t++) {
-        temp = SHA1_ROTL(5, A) + SHA_Maj(B, C, D) + E + W[t] + K[2];
+    for (i32 t = 40; t < 60; t++) {
+        u32 temp = SHA1_ROTL(5, A) + SHA_Maj(B, C, D) + E + W[t] + K[2];
         E = D;
         D = C;
         C = SHA1_ROTL(30, B);
@@ -155,8 +153,8 @@ static void SHA1ProcessMessageBlock(SHA1Context *context) {
         A = temp;
     }
 
-    for (t = 60; t < 80; t++) {
-        temp = SHA1_ROTL(5, A) + SHA_Parity(B, C, D) + E + W[t] + K[3];
+    for (i32 t = 60; t < 80; t++) {
+        u32 temp = SHA1_ROTL(5, A) + SHA_Parity(B, C, D) + E + W[t] + K[3];
         E = D;
         D = C;
         C = SHA1_ROTL(30, B);
@@ -199,23 +197,24 @@ i32 SHA1Input(SHA1Context *context, const u8 *message_array, unsigned length) {
 }
 
 static void SHA1PadMessage(SHA1Context *context, u8 Pad_Byte) {
-    /*
-     * Check to see if the current message block is too small to hold
+    /* Check to see if the current message block is too small to hold
      * the initial padding bits and length.  If so, we will pad the
      * block, process it, and then continue padding into a second
-     * block.
-     */
+     * block. */
     if (context->Message_Block_Index >= (SHA1_Message_Block_Size - 8)) {
         context->Message_Block[context->Message_Block_Index++] = Pad_Byte;
-        while (context->Message_Block_Index < SHA1_Message_Block_Size)
+        while (context->Message_Block_Index < SHA1_Message_Block_Size) {
             context->Message_Block[context->Message_Block_Index++] = 0;
+        }
 
         SHA1ProcessMessageBlock(context);
-    } else
+    } else {
         context->Message_Block[context->Message_Block_Index++] = Pad_Byte;
+    }
 
-    while (context->Message_Block_Index < (SHA1_Message_Block_Size - 8))
+    while (context->Message_Block_Index < (SHA1_Message_Block_Size - 8)) {
         context->Message_Block[context->Message_Block_Index++] = 0;
+    }
 
     /* Store the message length as the last 8 octets */
     context->Message_Block[56] = (u8)(context->Length >> 56);
@@ -233,8 +232,9 @@ static void SHA1PadMessage(SHA1Context *context, u8 Pad_Byte) {
 static void SHA1Finalize(SHA1Context *context, u8 Pad_Byte) {
     SHA1PadMessage(context, Pad_Byte);
     /* message may be sensitive, clear it out */
-    for (i32 i = 0; i < SHA1_Message_Block_Size; ++i)
+    for (i32 i = 0; i < SHA1_Message_Block_Size; ++i) {
         context->Message_Block[i] = 0;
+    }
     context->Length = 0; /* and clear length */
     context->Computed = 1;
 }
@@ -250,9 +250,10 @@ i32 SHA1Result(SHA1Context *context, u8 Message_Digest[SHA1HashSize]) {
     if (!context->Computed)
         SHA1Finalize(context, 0x80);
 
-    for (i32 i = 0; i < SHA1HashSize; ++i)
+    for (i32 i = 0; i < SHA1HashSize; ++i) {
         Message_Digest[i] =
             (u8)(context->Intermediate_Hash[i >> 2] >> (8 * (3 - (i & 0x03))));
+    }
 
     return shaSuccess;
 }
