@@ -15,4 +15,5 @@ gcc -g -c shatest.c
 
 gcc $CFLAGS -o shatest *.o
 
-gcc $CFLAGS -o standalone-sha1 standalone-sha1.c
+gcc $CFLAGS -o standalone-sha1   standalone-sha1.c
+gcc $CFLAGS -o standalone-sha256 standalone-sha256.c
