@@ -1,3 +1,6 @@
 build/
 *.o
 shatest
+standalone-sha1
+standalone-sha256
+standalone-sha512
